@@ -50,7 +50,7 @@ class RosNode:
         #data = [np.uint8(item) for item in data]
         #print(data)
         
-        points = make_circle_points(0,1,10)
+        points = make_circle_points(0,2,10)
         data = points_to_data(points)
         
         msg.data = data
@@ -82,10 +82,10 @@ def make_circle_points(height, radius, count):
     points = []
     ang = np.pi * 2/count
     for i in range(count):
-        y = np.sin(ang * i, dtype="float32")
-        x = np.cos(ang * i, dtype="float32")
+        y = radius * np.sin(ang * i, dtype="float32")
+        x = radius * np.cos(ang * i, dtype="float32")
         z = np.float32(height)
-        points.append((x,y,z))
+        points.append([x,y,z])
     return points           
 
 
