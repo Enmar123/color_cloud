@@ -50,7 +50,7 @@ class RosNode:
         #data = [np.uint8(item) for item in data]
         #print(data)
         
-        points = make_circle_points(0,2,200)
+        points = make_circle_points(0.1,2,200)
         data = points_to_data(points)
         
         msg.data = data

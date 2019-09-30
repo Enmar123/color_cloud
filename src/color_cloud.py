@@ -103,8 +103,8 @@ def setup_pc2msg():
     
     msg.height = 1
     #msg.width = 3
-    msg.point_step = 15
-    msg.row_step = 30
+    msg.point_step = 20
+    #msg.row_step = 30
     
     f1.name = "x"
     f1.offset = 0
@@ -121,8 +121,8 @@ def setup_pc2msg():
     f3.datatype = 7
     f3.count = 1
      
-    f4.name = "rgba"
-    f4.offset = 12
+    f4.name = "rgb"
+    f4.offset = 16
     f4.datatype = 7
     f4.count = 1
     
@@ -145,7 +145,9 @@ def point_to_data(point, rgb):
         bin4 = binTest[24:32]
         converted_value = [int(bin4,2),int(bin3,2),int(bin2,2),int(bin1,2)]
         data_segment = data_segment + converted_value
+    data_segment = data_segment + [0, 0, 0, 0]   #paddig
     data_segment = data_segment + [rgb[0], rgb[1], rgb[2]]
+    data_segment = data_segment + [0]       # Padding
     return data_segment
     
     
@@ -203,10 +205,11 @@ if __name__=="__main__":
         # transform img data into matrix
         try:
             img = bridge.imgmsg_to_cv2(img_msg_now, "bgr8")
-            img = np.flip(img, 1)              # Flip the image to correct view
+                          # Flip the image to correct view
             #img = np.array(img, dtype="float32")
         except CvBridgeError as e:
             print(e)
+        img = np.flip(img, 1)        
             
         # Transform point data to new ref frame
         euler = euler_from_quaternion(quat)
@@ -244,6 +247,7 @@ if __name__=="__main__":
         msg.header.stamp = rospy.Time.now()
         msg.width = int(len(data)/msg.point_step)
         msg.data = data
+        msg.row_step = msg.width * msg.point_step
         pub.publish(msg)
 
         rate.sleep()
