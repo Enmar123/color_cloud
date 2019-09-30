@@ -10,7 +10,8 @@ from cv_bridge import CvBridge, CvBridgeError
 import struct
 
 import numpy as np
-import copy
+import time
+
 
 # ----------------------------------------------------------------------------
 
@@ -42,7 +43,7 @@ def translation(vector, xyz):
     return vector + np.array(xyz)
 
 def transform_points(trans, euler, points):
-    threshold = 0.01
+    threshold = 0.001
     points = [translation(point, trans) for point in points]
     if euler[2] > threshold:
         points = [z_rotation(point, euler[2])  for point in points]
@@ -52,10 +53,6 @@ def transform_points(trans, euler, points):
         points = [x_rotation(point, euler[0])  for point in points]
     return points
 
-def imgdata_to_matrix(data, width):
-    mat = break_list(data, int(width*3))
-    mat = [break_list(row, 3) for row in mat]
-    return mat
 
 def pc2_callback(msg):
     global pc2_msg
@@ -68,13 +65,6 @@ def img_callback(msg):
     img_height = msg.height
     pass
 
-#def img_callback(msg):
-#    bridge = CvBridge()
-#    try:
-#        cv_image = bridge.imgmsg_to_cv2(msg, "bgr8")
-#    except CvBridgeError as e:
-#        print(e)
-#    print cv_image
 
 def setup_pc2msg():
     msg = PointCloud2()
@@ -89,7 +79,7 @@ def setup_pc2msg():
     msg.height = 1
     #msg.width = 3
     msg.point_step = 15
-    msg.row_step = 15
+    msg.row_step = 30
     
     f1.name = "x"
     f1.offset = 0
@@ -119,19 +109,6 @@ def setup_pc2msg():
 def binary(num):
     return ''.join(bin(ord(c)).replace('0b', '').rjust(8, '0') for c in struct.pack('!f', num))
 
-def points_to_data(points, rgb):
-    data=[]
-    for point in points:
-        for value in point:
-            binTest = binary(value)
-            bin1 = binTest[ 0: 8]
-            bin2 = binTest[ 8:16]
-            bin3 = binTest[16:24]
-            bin4 = binTest[24:32]
-            converted_value = [int(bin4,2),int(bin3,2),int(bin2,2),int(bin1,2),
-                               rgb[0], rgb[1], rgb[2]]
-            data = data + converted_value
-    return data
 
 def point_to_data(point, rgb):
     data_segment = []
@@ -149,8 +126,6 @@ def point_to_data(point, rgb):
     
 
 if __name__=="__main__":
-    #data = [60,221,25,64,160,147,170,191,0,0,128,63,
-    #        30,100,10,32,160,147,170,191,0,0,128,63]
     
     fov_width = 140 * np.pi/180
     
@@ -165,8 +140,11 @@ if __name__=="__main__":
     
     msg = setup_pc2msg()
     
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(50)
+    i = 1
+    totavg = 0
     while not rospy.is_shutdown():
+        t0 = time.time()
         # Get current transform
         try:
             (trans,rot) = listener.lookupTransform('/usb_cam', '/laser', rospy.Time(0))
@@ -175,32 +153,43 @@ if __name__=="__main__":
         
         # Get current image and pointcloud
         try:
-            img_msg_now = copy.copy(img_msg)
-            pc2_msg_now = copy.copy(pc2_msg)
+            img_msg_now = img_msg
+            pc2_msg_now = pc2_msg
         except NameError:
             continue
+        
+        t1 = time.time()
         
         # transform img data into matrix
         try:
             img = bridge.imgmsg_to_cv2(img_msg_now, "bgr8")
+            img = np.flip(img, 1)              # Flip the image to correct view
+            #img = np.array(img, dtype="float32")
         except CvBridgeError as e:
             print(e)
+            
+        t2 = time.time()
+            
         # Transform point data to new ref frame
-        euler = euler_from_quaternion (rot)
+        euler = euler_from_quaternion(rot)
         points = pc2msg_to_points(pc2_msg_now)
         points_new = transform_points(trans, euler, points)
+        
+        t3 = time.time()
+        
         # filter out any unusable points
         points_filtered = []
         for point in points_new:
-            if point[0] > 0:
+            if point[0] > 0:              # Get rid of all points behind camera
                 points_filtered.append(point)
+                
         # get pix size for x distance
         data = []
         for point in points_filtered:    
             x = point[0]
             y = point[1]
             z = point[2]
-            pix_size = (2 * point[0] * np.tan(fov_width/2))/img_width
+            pix_size = (2 * x * np.tan(fov_width/2))/img_width
             # Get row and column coordinates
             y_mod = img_width/2  + y/pix_size 
             z_mod = img_height/2 - z/pix_size 
@@ -211,32 +200,32 @@ if __name__=="__main__":
             if 0 <= col < img_msg_now.width and 0 <= row < img_msg_now.height:    
                 rgb = img[row][col]
                 # convert the data to pc2data
-                data_segment = point_to_data(point,rgb)
+                data_segment = point_to_data(point, rgb)
                 # add the data
                 data = data + data_segment
+        
+        t4 = time.time()
         #print(data)
+
         
         
         rospy.loginfo("publishing point")
         msg.header.stamp = rospy.Time.now()
-        msg.width = int(len(data)/15)
+        msg.width = int(len(data)/msg.point_step)
         msg.data = data
         pub.publish(msg)
-        rate.sleep()
-                
-
-        #
-        
-        
-        
-        #print("points =")
-        #print(np.array(points))
-        #print("points_new =")
-        #print(np.array(points_new))
-        
-        #rospy.loginfo("quat  = %s"%(str(rot)))
-        #rospy.loginfo("euler = %s"%(str(euler)))
-        
+        t5 = time.time()
+        print(round(t1-t0,4))
+        print(round(t2-t1,4))
+        print(round(t3-t2,4))
+        print(round(t4-t3,4))
+        print(round(t5-t4,4))
+        tot = round(t5-t0,4)
+        print("tot =", tot)
+        print("maxrate =", 1/tot)
+        totavg = totavg + tot
+        print("maxavg =", 1/(totavg/i))
+        i += 1
         rate.sleep()
         
     

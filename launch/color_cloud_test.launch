@@ -1,0 +1,8 @@
+<launch>
+  <node name="color_cloud_test" pkg="color_cloud" type="color_cloud.py" />
+    <param name="fov_width"        value="140" />
+    <param name="pointcloud_frame" value="laser" />
+    <param name="camera_frame"     value="usb_cam" />
+  <node name="fake_cloud" pkg="color_cloud" type="fake_cloud.py" />
+  <node name="tf_broadcaster" pkg="color_cloud" type="tf_broadcaster.py" />
+</launch>

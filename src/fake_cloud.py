@@ -20,7 +20,7 @@ class RosNode:
         msg.header.frame_id = "laser"
         
         msg.height = 1
-        msg.width = 100
+        #msg.width = 100
         msg.point_step = 12
         msg.row_step = 12
         
@@ -50,14 +50,15 @@ class RosNode:
         #data = [np.uint8(item) for item in data]
         #print(data)
         
-        points = make_circle_points(0,2,100)
+        points = make_circle_points(0,2,200)
         data = points_to_data(points)
         
         msg.data = data
         
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(100)
         while not rospy.is_shutdown():
             rospy.loginfo("publishing point")
+            msg.width = int(len(data)/12)
             msg.header.stamp = rospy.Time.now()
             self.pub.publish(msg)
             rate.sleep()
