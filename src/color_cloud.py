@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import rospy
-from sensor_msgs.msg import Image, PointCloud2
+from sensor_msgs.msg import Image, PointCloud2, PointField
 import sensor_msgs.point_cloud2
 import tf
 from tf.transformations import euler_from_quaternion 
 
 from cv_bridge import CvBridge, CvBridgeError
+import struct
 
 import numpy as np
 import copy
@@ -78,7 +79,82 @@ def img_callback(msg):
 #        print(e)
 #    print cv_image
 
-        
+def setup_pc2msg():
+    msg = PointCloud2()
+    
+    f1 = PointField()
+    f2 = PointField()
+    f3 = PointField()
+    f4 = PointField()
+    
+    msg.header.frame_id = "usb_cam"
+    
+    msg.height = 1
+    msg.width = 3
+    msg.point_step = 15
+    msg.row_step = 24
+    
+    f1.name = "x"
+    f1.offset = 0
+    f1.datatype = 7
+    f1.count = 1
+    
+    f2.name = "y"
+    f2.offset = 4
+    f2.datatype = 7
+    f2.count = 1
+    
+    f3.name = "z"
+    f3.offset = 8
+    f3.datatype = 7
+    f3.count = 1
+    
+#    f4.name = "rgb"
+#    f4.offset = 12
+#    f4.datatype = 2
+#    f4.count = 1
+#    
+    f4.name = "rgba"
+    f4.offset = 12
+    f4.datatype = 7
+    f4.count = 1
+    
+    msg.fields = [f1, f2, f3, f4]
+    msg.is_dense = True
+    
+    return msg
+    
+def binary(num):
+    return ''.join(bin(ord(c)).replace('0b', '').rjust(8, '0') for c in struct.pack('!f', num))
+
+def points_to_data(points, rgb):
+    data=[]
+    for point in points:
+        for value in point:
+            binTest = binary(value)
+            bin1 = binTest[ 0: 8]
+            bin2 = binTest[ 8:16]
+            bin3 = binTest[16:24]
+            bin4 = binTest[24:32]
+            converted_value = [int(bin4,2),int(bin3,2),int(bin2,2),int(bin1,2),
+                               rgb[0], rgb[1], rgb[2]]
+            data = data + converted_value
+    return data
+
+def point_to_data(point, rgb):
+    data_segment = []
+    for value in point:
+        binTest = binary(value)
+        bin1 = binTest[ 0: 8]
+        bin2 = binTest[ 8:16]
+        bin3 = binTest[16:24]
+        bin4 = binTest[24:32]
+        converted_value = [int(bin4,2),int(bin3,2),int(bin2,2),int(bin1,2)]
+        data_segment = data_segment + converted_value
+    data_segment = data_segment + [rgb[0], rgb[1], rgb[2]]
+    return data_segment
+    
+    
 
 if __name__=="__main__":
     #data = [60,221,25,64,160,147,170,191,0,0,128,63,
@@ -90,9 +166,12 @@ if __name__=="__main__":
     rospy.loginfo("Starting Node: /color_cloud")
     rospy.Subscriber("pointcloud", PointCloud2, pc2_callback)
     rospy.Subscriber("/usb_cam/image_raw", Image, img_callback)
+    pub = rospy.Publisher("rgb_cloud", PointCloud2, queue_size=10)
     
     listener = tf.TransformListener()
     bridge = CvBridge()
+    
+    msg = setup_pc2msg()
     
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
@@ -125,8 +204,9 @@ if __name__=="__main__":
                 points_filtered.append(point)
         #print(points_filtered)
         # get pix size for x distance
-        for point in points_filtered:
-            print(point)
+        data = []
+        for point in points_filtered:    
+            #print(point)
             x = point[0]
             y = point[1]
             z = point[2]
@@ -140,10 +220,21 @@ if __name__=="__main__":
                 z_mod = img_height/2 - z/pix_size 
                 row = int(z_mod)
                 col = int(y_mod)
-                print((row, col))
+                #print((row, col))
                 # Get color of that row and column
                 rgb = img[row][col]
-                print(rgb)
+                # convert the data to pc2data
+                data_segment = point_to_data(point,rgb)
+                # add the data
+                data = data + data_segment
+        print(data)
+        
+        
+        rospy.loginfo("publishing point")
+        msg.header.stamp = rospy.Time.now()
+        msg.data = data
+        pub.publish(msg)
+        rate.sleep()
                 
 
         #
