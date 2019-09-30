@@ -12,14 +12,7 @@ import struct
 import numpy as np
 import copy
 
-def uint8arr_to_float32(values):
-    raw_unit8_data = np.array(values, dtype='uint8')
-    num = np.fromstring(raw_unit8_data.tostring(), dtype='<f4')
-    return num[0]
-
-def break_list(my_list, n):
-    final = [my_list[i * n:(i + 1) * n] for i in range((len(my_list) + n - 1) // n )]  
-    return final
+# ----------------------------------------------------------------------------
 
 def pc2msg_to_points(msg):
     points = []
@@ -49,10 +42,14 @@ def translation(vector, xyz):
     return vector + np.array(xyz)
 
 def transform_points(trans, euler, points):
+    threshold = 0.01
     points = [translation(point, trans) for point in points]
-    points = [z_rotation(point, euler[2])  for point in points]
-    points = [y_rotation(point, euler[1])  for point in points]
-    points = [x_rotation(point, euler[0])  for point in points]
+    if euler[2] > threshold:
+        points = [z_rotation(point, euler[2])  for point in points]
+    if euler[1] > threshold:
+        points = [y_rotation(point, euler[1])  for point in points]
+    if euler[0] > threshold:
+        points = [x_rotation(point, euler[0])  for point in points]
     return points
 
 def imgdata_to_matrix(data, width):
@@ -90,9 +87,9 @@ def setup_pc2msg():
     msg.header.frame_id = "usb_cam"
     
     msg.height = 1
-    msg.width = 3
+    #msg.width = 3
     msg.point_step = 15
-    msg.row_step = 24
+    msg.row_step = 15
     
     f1.name = "x"
     f1.offset = 0
@@ -108,19 +105,14 @@ def setup_pc2msg():
     f3.offset = 8
     f3.datatype = 7
     f3.count = 1
-    
-#    f4.name = "rgb"
-#    f4.offset = 12
-#    f4.datatype = 2
-#    f4.count = 1
-#    
+     
     f4.name = "rgba"
     f4.offset = 12
     f4.datatype = 7
     f4.count = 1
     
     msg.fields = [f1, f2, f3, f4]
-    msg.is_dense = True
+    msg.is_dense = False
     
     return msg
     
@@ -202,36 +194,32 @@ if __name__=="__main__":
         for point in points_new:
             if point[0] > 0:
                 points_filtered.append(point)
-        #print(points_filtered)
         # get pix size for x distance
         data = []
         for point in points_filtered:    
-            #print(point)
             x = point[0]
             y = point[1]
             z = point[2]
             pix_size = (2 * point[0] * np.tan(fov_width/2))/img_width
-            # Check if point is outside image bounds
-            if abs(y) > pix_size*img_width or abs(z) > pix_size*img_height:
-                pass
-            else:
-                # Get row and column coordinates
-                y_mod = img_width/2  + y/pix_size 
-                z_mod = img_height/2 - z/pix_size 
-                row = int(z_mod)
-                col = int(y_mod)
-                #print((row, col))
-                # Get color of that row and column
+            # Get row and column coordinates
+            y_mod = img_width/2  + y/pix_size 
+            z_mod = img_height/2 - z/pix_size 
+            row = int(z_mod)
+            col = int(y_mod)
+            # Get color of that row and column
+            # Check if point is inside image bounds
+            if 0 <= col < img_msg_now.width and 0 <= row < img_msg_now.height:    
                 rgb = img[row][col]
                 # convert the data to pc2data
                 data_segment = point_to_data(point,rgb)
                 # add the data
                 data = data + data_segment
-        print(data)
+        #print(data)
         
         
         rospy.loginfo("publishing point")
         msg.header.stamp = rospy.Time.now()
+        msg.width = int(len(data)/15)
         msg.data = data
         pub.publish(msg)
         rate.sleep()

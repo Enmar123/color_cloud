@@ -31,7 +31,7 @@ if __name__ == '__main__':
             static_tf_0.header.frame_id = "base_link"
             static_tf_0.child_frame_id = "laser"
         
-            static_tf_0.transform.translation.x = float('0')
+            static_tf_0.transform.translation.x = float('-0.5')
             static_tf_0.transform.translation.y = float('0')
             static_tf_0.transform.translation.z = float('0')
         
@@ -45,7 +45,7 @@ if __name__ == '__main__':
             static_tf_1.header.frame_id = "base_link"
             static_tf_1.child_frame_id = "usb_cam"
         
-            static_tf_1.transform.translation.x = float('1')
+            static_tf_1.transform.translation.x = float('0.5')
             static_tf_1.transform.translation.y = float('0')
             static_tf_1.transform.translation.z = float('0')
         

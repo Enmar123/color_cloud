@@ -20,7 +20,7 @@ class RosNode:
         msg.header.frame_id = "laser"
         
         msg.height = 1
-        msg.width = 10
+        msg.width = 100
         msg.point_step = 12
         msg.row_step = 12
         
@@ -50,7 +50,7 @@ class RosNode:
         #data = [np.uint8(item) for item in data]
         #print(data)
         
-        points = make_circle_points(0,2,10)
+        points = make_circle_points(0,2,100)
         data = points_to_data(points)
         
         msg.data = data
