@@ -35,7 +35,7 @@ if __name__ == '__main__':
             static_tf_0.transform.translation.y = float('0')
             static_tf_0.transform.translation.z = float('0')
         
-            quat = tf.transformations.quaternion_from_euler(float('0.00'),float('0.00'),float('0.00'))
+            quat = tf.transformations.quaternion_from_euler(0, np.pi/2, np.pi/2)
             static_tf_0.transform.rotation.x = quat[0]
             static_tf_0.transform.rotation.y = quat[1]
             static_tf_0.transform.rotation.z = quat[2]

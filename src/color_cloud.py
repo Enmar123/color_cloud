@@ -10,7 +10,6 @@ from cv_bridge import CvBridge, CvBridgeError
 import struct
 
 import numpy as np
-import time
 
 
 # ----------------------------------------------------------------------------
@@ -42,17 +41,43 @@ def z_rotation(vector,theta):
 def translation(vector, xyz):
     return vector + np.array(xyz)
 
+def translation2(vector, xyz):
+    return vector - np.array(xyz)
+
 def transform_points(trans, euler, points):
+    """This transormer doesnt work"""
     threshold = 0.001
+    #print(euler)
     points = [translation(point, trans) for point in points]
     if euler[2] > threshold:
-        points = [z_rotation(point, euler[2])  for point in points]
+        points = [z_rotation(point, euler[2])  for point in points] 
     if euler[1] > threshold:
         points = [y_rotation(point, euler[1])  for point in points]
     if euler[0] > threshold:
         points = [x_rotation(point, euler[0])  for point in points]
     return points
 
+def transform_points2(trans, quat, points):
+    #points = [translation(point, trans) for point in points]
+    #trans_new = qv_mult(quat, trans)
+    points = [qv_mult(quat, point) for point in points]
+    points = [translation(point, trans) for point in points]
+    #print(trans)
+    #print(trans_new)
+    return points
+    
+def qv_mult(q1, v1):
+    v1_new = tf.transformations.unit_vector(v1)
+    q2 = list(v1_new)
+    q2.append(0.0)
+    unit_vector = tf.transformations.quaternion_multiply(
+                    tf.transformations.quaternion_multiply(q1, q2), 
+                    tf.transformations.quaternion_conjugate(q1)
+                    )[:3]
+    
+    vector_len = np.sqrt(v1[0]**2 + v1[1]**2 + v1[2]**2)
+    vector = unit_vector * vector_len
+    return vector
 
 def pc2_callback(msg):
     global pc2_msg
@@ -141,13 +166,11 @@ if __name__=="__main__":
     msg = setup_pc2msg()
     
     rate = rospy.Rate(50)
-    i = 1
-    totavg = 0
     while not rospy.is_shutdown():
-        t0 = time.time()
+
         # Get current transform
         try:
-            (trans,rot) = listener.lookupTransform('/usb_cam', '/laser', rospy.Time(0))
+            (trans, quat) = listener.lookupTransform('/usb_cam', '/laser', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         
@@ -158,8 +181,6 @@ if __name__=="__main__":
         except NameError:
             continue
         
-        t1 = time.time()
-        
         # transform img data into matrix
         try:
             img = bridge.imgmsg_to_cv2(img_msg_now, "bgr8")
@@ -168,14 +189,10 @@ if __name__=="__main__":
         except CvBridgeError as e:
             print(e)
             
-        t2 = time.time()
-            
         # Transform point data to new ref frame
-        euler = euler_from_quaternion(rot)
+        euler = euler_from_quaternion(quat)
         points = pc2msg_to_points(pc2_msg_now)
-        points_new = transform_points(trans, euler, points)
-        
-        t3 = time.time()
+        points_new = transform_points2(trans, quat, points)
         
         # filter out any unusable points
         points_filtered = []
@@ -204,28 +221,12 @@ if __name__=="__main__":
                 # add the data
                 data = data + data_segment
         
-        t4 = time.time()
-        #print(data)
-
-        
-        
         rospy.loginfo("publishing point")
         msg.header.stamp = rospy.Time.now()
         msg.width = int(len(data)/msg.point_step)
         msg.data = data
         pub.publish(msg)
-        t5 = time.time()
-        print(round(t1-t0,4))
-        print(round(t2-t1,4))
-        print(round(t3-t2,4))
-        print(round(t4-t3,4))
-        print(round(t5-t4,4))
-        tot = round(t5-t0,4)
-        print("tot =", tot)
-        print("maxrate =", 1/tot)
-        totavg = totavg + tot
-        print("maxavg =", 1/(totavg/i))
-        i += 1
+
         rate.sleep()
         
     
