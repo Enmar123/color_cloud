@@ -99,7 +99,7 @@ def setup_pc2msg():
     f3 = PointField()
     f4 = PointField()
     
-    msg.header.frame_id = "usb_cam"
+    #msg.header.frame_id = "usb_cam"
     
     msg.height = 1
     #msg.width = 3
@@ -245,6 +245,7 @@ if __name__=="__main__":
         
         rospy.loginfo("publishing point")
         msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = img_msg_now.header.frame_id
         msg.width = int(len(data)/msg.point_step)
         msg.data = data
         msg.row_step = msg.width * msg.point_step
