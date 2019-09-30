@@ -152,25 +152,44 @@ def point_to_data(point, rgb):
 
 if __name__=="__main__":
     
-    fov_width = 140 * np.pi/180
-    
     rospy.init_node("color_cloud")
-    rospy.loginfo("Starting Node: /color_cloud")
-    rospy.Subscriber("pointcloud", PointCloud2, pc2_callback)
-    rospy.Subscriber("/usb_cam/image_raw", Image, img_callback)
-    pub = rospy.Publisher("rgb_cloud", PointCloud2, queue_size=10)
+    
+    # load params from launch file
+    fov_width = rospy.get_param('~fov_width', 140)
+    fov_width = fov_width * np.pi/180
+    pointcloud_topic = rospy.get_param('~pc2_topic_in', 'pointcloud')
+    image_topic = rospy.get_param('~image_topic_in', 'usb_cam/image_raw')
+    pc2_topic_out = rospy.get_param('~pc2_topic_out', 'rgb_cloud')
+    
+    rospy.loginfo("Starting Node: color_cloud")
+    rospy.Subscriber(pointcloud_topic, PointCloud2, pc2_callback)
+    rospy.Subscriber(image_topic, Image, img_callback)
+    pub = rospy.Publisher(pc2_topic_out, PointCloud2, queue_size=10)
     
     listener = tf.TransformListener()
     bridge = CvBridge()
     
     msg = setup_pc2msg()
     
+    # wait for message data to load
+    while not rospy.is_shutdown():
+        try:
+            img_msg_now = img_msg
+            pc2_msg_now = pc2_msg
+        except NameError:
+            continue
+        break
+    
+    img_frame_id = img_msg_now.header.frame_id
+    pc2_frame_id = pc2_msg_now.header.frame_id
+    
+    
     rate = rospy.Rate(50)
     while not rospy.is_shutdown():
 
         # Get current transform
         try:
-            (trans, quat) = listener.lookupTransform('/usb_cam', '/laser', rospy.Time(0))
+            (trans, quat) = listener.lookupTransform(img_frame_id, pc2_frame_id, rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         

@@ -9,6 +9,4 @@ Launch file for testing purposes
     <param name="image_topic_in"     value="usb_cam/image_raw" />   <!--default = usb_cam/image_raw -->
     <param name="pc2_topic_out"      value="rgb_cloud" />           <!--default = rgb_cloud -->
   </node>
-  <node name="fake_cloud" pkg="color_cloud" type="fake_cloud.py" />
-  <node name="tf_broadcaster" pkg="color_cloud" type="tf_broadcaster.py" />
 </launch>
