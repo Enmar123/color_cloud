@@ -157,8 +157,12 @@ if __name__=="__main__":
     rospy.init_node("color_cloud")
     
     # load params from launch file
-    fov_width = rospy.get_param('~fov_width', 140)
+    fov_width = rospy.get_param('~fov_width', 54)
     fov_width = fov_width * np.pi/180
+    fov_height = rospy.get_param('~fov_height', 41)
+    fov_height = fov_height * np.pi/180
+    width_offset = rospy.get_param('~width_offset', 90)
+    height_offset = rospy.get_param('~height_offset', -120)
     pointcloud_topic = rospy.get_param('~pc2_topic_in', 'pointcloud')
     image_topic = rospy.get_param('~image_topic_in', 'usb_cam/image_raw')
     pc2_topic_out = rospy.get_param('~pc2_topic_out', 'rgb_cloud')
@@ -219,7 +223,7 @@ if __name__=="__main__":
         # filter out any unusable points
         points_filtered = []
         for point in points_new:
-            if point[0] > 0:              # Get rid of all points behind camera
+            if point[2] > 0:              # Get rid of all points behind camera
                 points_filtered.append(point)
                 
         # get pix size for x distance
@@ -228,17 +232,18 @@ if __name__=="__main__":
             x = point[0]
             y = point[1]
             z = point[2]
-            pix_size = (2 * x * np.tan(fov_width/2))/img_width
+            pix_width = (2 * z * np.tan(fov_width/2))/img_width
+            pix_height = (2 * z * np.tan(fov_height/2))/img_height
             # Get row and column coordinates
-            y_mod = img_width/2  + y/pix_size 
-            z_mod = img_height/2 - z/pix_size 
-            row = int(z_mod)
-            col = int(y_mod)
+            y_mod = img_width/2  + y/pix_height + height_offset
+            x_mod = img_height/2 - x/pix_width  + width_offset
+            row = int(y_mod)
+            col = int(x_mod)
             # Get color of that row and column
             # Check if point is inside image bounds
             if 0 <= col < img_msg_now.width and 0 <= row < img_msg_now.height:    
                 rgb = img[row][col]
-                # convert the data to pc2data
+                # convert the data to p/rs435_camera/color/image_rawc2data
                 data_segment = point_to_data(point, rgb)
                 # add the data
                 data = data + data_segment

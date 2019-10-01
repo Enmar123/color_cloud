@@ -16,8 +16,14 @@ pointcloud!
 
 * My colors dont overlay the pointcloud
   * check if your transforms have the correct dimensions
-  * try tweaking the fov paramter in the launch file
+  * try tweaking the fov and offset parameters in the launch file
   * make sure to use a rectified image for your image topic
+
+* My points are in the wong location
+  * your camera frame must have a transform following the standard
+    * z-axis: into the screen
+    * x-axis: pointing right
+    * y-axis: pointing down
 
 **Known issues:**
 
