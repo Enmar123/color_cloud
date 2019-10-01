@@ -3,6 +3,8 @@
 This package can map colors from cameras onto pointclouds, giving you a colored
 pointcloud!
 
+![color_cloud](https://github.com/Enmar123/color_cloud/blob/master/readme_images/color_cloud_rviz.png "rviz")
+
 **To get started:**
 
 * edit the color_cloud.launch file to reflect your setup

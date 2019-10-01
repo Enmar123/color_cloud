@@ -162,7 +162,7 @@ if __name__=="__main__":
     fov_height = rospy.get_param('~fov_height', 41)
     fov_height = fov_height * np.pi/180
     width_offset = rospy.get_param('~width_offset', 90)
-    height_offset = rospy.get_param('~height_offset', -120)
+    height_offset = rospy.get_param('~height_offset', -100)
     pointcloud_topic = rospy.get_param('~pc2_topic_in', 'pointcloud')
     image_topic = rospy.get_param('~image_topic_in', 'usb_cam/image_raw')
     pc2_topic_out = rospy.get_param('~pc2_topic_out', 'rgb_cloud')

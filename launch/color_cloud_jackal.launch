@@ -9,10 +9,10 @@ Launch file for testing purposes
     <param name="image_topic_in"     value="rs435_camera/color/image_raw" />   <!--default = usb_cam/image_raw -->
     <param name="pc2_topic_out"      value="rgb_cloud" />           <!--default = rgb_cloud -->
 
-    <param name="fov_width"          value="50" />                 <!--default = 54 -->
-    <param name="fov_height"         value="50" />                 <!--default = 41 -->
+    <param name="fov_width"          value="54" />                 <!--default = 54 -->
+    <param name="fov_height"         value="41" />                 <!--default = 41 -->
     <param name="width_offset"       value="+90" />                 <!--default = +90 -->
-    <param name="height_offset"      value="-120" />                 <!--default = -120 -->
+    <param name="height_offset"      value="-100" />                 <!--default = -100 -->
 
   </node>
 </launch>
