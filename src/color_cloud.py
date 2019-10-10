@@ -23,47 +23,13 @@ def pc2msg_to_points(msg):
             points.append([x,y,z])
     return points
 
-#def x_rotation(vector,theta):
-#    """Rotates 3-D vector around x-axis"""
-#    R = np.array([[1,0,0],[0,np.cos(theta),-np.sin(theta)],[0, np.sin(theta), np.cos(theta)]])
-#    return np.dot(R,vector)
-#
-#def y_rotation(vector,theta):
-#    """Rotates 3-D vector around y-axis"""
-#    R = np.array([[np.cos(theta),0,np.sin(theta)],[0,1,0],[-np.sin(theta), 0, np.cos(theta)]])
-#    return np.dot(R,vector)
-#
-#def z_rotation(vector,theta):
-#    """Rotates 3-D vector around z-axis"""
-#    R = np.array([[np.cos(theta), -np.sin(theta),0],[np.sin(theta), np.cos(theta),0],[0,0,1]])
-#    return np.dot(R,vector)
-
 def translation(vector, xyz):
     return vector + np.array(xyz)
 
-def translation2(vector, xyz):
-    return vector - np.array(xyz)
-
-#def transform_points(trans, euler, points):
-#    """This transormer doesnt work"""
-#    threshold = 0.001
-#    #print(euler)
-#    points = [translation(point, trans) for point in points]
-#    if euler[2] > threshold:
-#        points = [z_rotation(point, euler[2])  for point in points] 
-#    if euler[1] > threshold:
-#        points = [y_rotation(point, euler[1])  for point in points]
-#    if euler[0] > threshold:
-#        points = [x_rotation(point, euler[0])  for point in points]
-#    return points
-
-def transform_points2(trans, quat, points):
-    #points = [translation(point, trans) for point in points]
-    #trans_new = qv_mult(quat, trans)
+def transform_points(trans, quat, points):
     points = [qv_mult(quat, point) for point in points]
     points = [translation(point, trans) for point in points]
-    #print(trans)
-    #print(trans_new)
+
     return points
     
 def qv_mult(q1, v1):
@@ -115,9 +81,8 @@ def pc2_callback(msg):
     
         
     # Transform point data to new ref frame
-    #euler = euler_from_quaternion(quat)
     points = pc2msg_to_points(pc2_msg_now)
-    points_new = transform_points2(trans, quat, points)
+    points_new = transform_points(trans, quat, points)
     
 
     pts = np.array(points_new).tolist()
@@ -144,12 +109,10 @@ def pc2_callback(msg):
         if 0 <= col < img_msg_now.width and 0 <= row < img_msg_now.height:    
             rgb = img[row][col]              # Get color of that row and column
             pts_color.append([point[0],point[1],point[2]] + list(rgb))    
-    #print pts_color
     # Convert points with rgb to data
     data = []      
     for point in pts_color:
-        # convert the data to p/rs435_camera/color/image_rawc2data
-        #print point[3:]
+        # convert the data to p/rs435_camera/color/image_rawc2dat
         data_segment = point_to_data(point[0:3], point[3:])
         # add the data
         data = data + data_segment
@@ -299,74 +262,5 @@ if __name__=="__main__":
     #pc2_frame_id = pc2_msg_now.header.frame_id
     
     rospy.spin()
-    
-    
-#    rate = rospy.Rate(50)
-#    while not rospy.is_shutdown():
-#
-#        # Get current transform
-#        try:
-#            (trans, quat) = listener.lookupTransform(img_frame_id, pc2_frame_id, rospy.Time(0))
-#        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-#            continue
-#        
-#        # Get current image and pointcloud
-#        try:
-#            img_msg_now = img_msg
-#            pc2_msg_now = pc2_msg
-#        except NameError:
-#            continue
-#        
-#        # transform img data into matrix
-#        try:
-#            img = bridge.imgmsg_to_cv2(img_msg_now, "bgr8")
-#                          # Flip the image to correct view
-#            #img = np.array(img, dtype="float32")
-#        except CvBridgeError as e:
-#            print(e)
-#        img = np.flip(img, 1)        
-#            
-#        # Transform point data to new ref frame
-#        euler = euler_from_quaternion(quat)
-#        points = pc2msg_to_points(pc2_msg_now)
-#        points_new = transform_points2(trans, quat, points)
-#        
-#        # filter out any unusable points
-#        points_filtered = []
-#        for point in points_new:
-#            if point[2] > 0:              # Get rid of all points behind camera
-#                points_filtered.append(point)
-#                
-#        # get pix size for x distance
-#        data = []
-#        for point in points_filtered:    
-#            x = point[0]
-#            y = point[1]
-#            z = point[2]
-#            pix_width = (2 * z * np.tan(fov_width/2))/img_width
-#            pix_height = (2 * z * np.tan(fov_height/2))/img_height
-#            # Get row and column coordinates
-#            y_mod = img_width/2  + y/pix_height + height_offset
-#            x_mod = img_height/2 - x/pix_width  + width_offset
-#            row = int(y_mod)
-#            col = int(x_mod)
-#            # Get color of that row and column
-#            # Check if point is inside image bounds
-#            if 0 <= col < img_msg_now.width and 0 <= row < img_msg_now.height:    
-#                rgb = img[row][col]
-#                # convert the data to p/rs435_camera/color/image_rawc2data
-#                data_segment = point_to_data(point, rgb)
-#                # add the data
-#                data = data + data_segment
-#        
-#        rospy.loginfo("publishing point")
-#        msg.header.stamp = rospy.Time.now()
-#        msg.header.frame_id = img_msg_now.header.frame_id
-#        msg.width = int(len(data)/msg.point_step)
-#        msg.data = data
-#        msg.row_step = msg.width * msg.point_step
-#        pub.publish(msg)
-#
-#        rate.sleep()
         
     
