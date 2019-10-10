@@ -12,4 +12,5 @@ Launch file for testing purposes
   </node>
   <node name="fake_cloud" pkg="color_cloud" type="fake_cloud.py" />
   <node name="tf_broadcaster" pkg="color_cloud" type="tf_broadcaster.py" />
+  <include file="$(find usb_cam)/launch/usb_cam-test.launch" />
 </launch>
