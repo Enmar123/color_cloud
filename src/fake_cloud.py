@@ -55,7 +55,7 @@ class RosNode:
         
         msg.data = data
         
-        rate = rospy.Rate(1)
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             rospy.loginfo("publishing point")
             msg.width = int(len(data)/12)

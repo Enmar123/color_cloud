@@ -92,7 +92,7 @@ def pc2_callback(msg):
         if pt[2] > 0:              
             pts_fil.append(pt)
             
-    # filter based on image size and color points
+    # filter based on FOV and then color points
     pts_color = []
     for point in pts_fil:    
         x = point[0]
@@ -109,6 +109,7 @@ def pc2_callback(msg):
         if 0 <= col < img_msg_now.width and 0 <= row < img_msg_now.height:    
             rgb = img[row][col]              # Get color of that row and column
             pts_color.append([point[0],point[1],point[2]] + list(rgb))    
+            
     # Convert points with rgb to data
     data = []      
     for point in pts_color:
@@ -117,14 +118,14 @@ def pc2_callback(msg):
         # add the data
         data = data + data_segment
     
-    rospy.loginfo("publishing point")
+    rospy.loginfo("publishing points")
     msg.header.stamp = rospy.Time.now()
     msg.header.frame_id = img_msg_now.header.frame_id
     msg.width = int(len(data)/msg.point_step)
     msg.data = data
     msg.row_step = msg.width * msg.point_step
     pub.publish(msg)
-    rospy.loginfo(pts_color[0])
+    #rospy.loginfo(pts_color[0])
     
 def pts_filter_color(points):
     """ Filter out any unusable points and color the remaining """
