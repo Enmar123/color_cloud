@@ -76,8 +76,11 @@ def pc2_callback(msg):
         except CvBridgeError as e:
             print(e)
         break
-        
-    img = np.flip(img, 1) 
+    
+    try:
+    	img = np.flip(img, 1)
+    except:
+	img = np.fliplr(img)
     
         
     # Transform point data to new ref frame

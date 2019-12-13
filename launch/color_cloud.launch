@@ -3,7 +3,7 @@ Launch file for testing purposes
 -->
 
 <launch>
-  <node name="color_cloud_test" pkg="color_cloud" type="color_cloud.py" >
+  <node name="color_cloud" pkg="color_cloud" type="color_cloud.py" >
 
     <param name="pc2_topic_in"       value="pointcloud" />          <!--default = pointcloud -->
     <param name="image_topic_in"     value="usb_cam/image_raw" />   <!--default = usb_cam/image_raw -->
