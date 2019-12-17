@@ -53,11 +53,17 @@ def pc2_callback(msg):
     
     pc2_frame_id = pc2_msg.header.frame_id
     
+#    p = PointCloud2()
+#    p.header.stamp.
+    
     while not rospy.is_shutdown():
 
         # Get current transform
+        #tf_time = rospy.Time(pc2_msg.header.stamp.secs, pc2_msg.header.stamp.nsecs )
         try:
-            (trans, quat) = listener.lookupTransform(img_frame_id, pc2_frame_id, rospy.Time(0))
+            (trans, quat) = listener.lookupTransform(img_frame_id,
+                                                     pc2_frame_id,
+                                                     pc2_msg.header.stamp)
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         
