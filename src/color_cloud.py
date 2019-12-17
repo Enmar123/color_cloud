@@ -83,7 +83,10 @@ def pc2_callback(msg):
             print(e)
         break
         
-    img = np.flip(img, 1) 
+    try:
+	img = np.flip(img, 1) 
+    except:
+        img = np.fliplr(img)
     
         
     # Transform point data to new ref frame

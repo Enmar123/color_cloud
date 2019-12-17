@@ -3,16 +3,16 @@ Launch file for testing purposes
 -->
 
 <launch>
-  <node name="color_cloud_test" pkg="color_cloud" type="color_cloud.py" >
+  <node name="color_cloud" pkg="color_cloud" type="color_cloud.py" >
 
-    <param name="pc2_topic_in"       value="pointcloud2" />                    <!--default = pointcloud -->
-    <param name="image_topic_in"     value="rs435_camera/color/image_raw" />   <!--default = usb_cam/image_raw -->
+    <param name="pc2_topic_in"       value="pointcloud1" />                    <!--default = pointcloud -->
+    <param name="image_topic_in"     value="left/usb_cam/image_rect_color" />       <!--default = usb_cam/image_raw -->
     <param name="pc2_topic_out"      value="rgb_cloud" />                      <!--default = rgb_cloud -->
 
-    <param name="fov_width"          value="54" />                 <!--default = 54 -->
-    <param name="fov_height"         value="41" />                 <!--default = 41 -->
-    <param name="width_offset"       value="+90" />                <!--default = 0 -->
-    <param name="height_offset"      value="-100" />               <!--default = 0 -->
+    <param name="fov_width"          value="80" />                 <!--default = 54 -->
+    <param name="fov_height"         value="80" />                 <!--default = 80 -->
+    <param name="width_offset"       value="0" />                <!--default = 0 -->
+    <param name="height_offset"      value="0" />               <!--default = 0 -->
 
   </node>
 </launch>
